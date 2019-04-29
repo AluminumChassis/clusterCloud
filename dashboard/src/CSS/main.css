@@ -1,0 +1,186 @@
+/* General, overarching rules */
+:root {
+  --bg-color: #dadada;
+}
+
+::-webkit-scrollbar {
+  height: .5vh;
+  width: .5vw;
+}
+::-webkit-scrollbar-track {
+  background: #eee;
+}
+::-webkit-scrollbar-thumb {
+  background: #aaa;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: #999; 
+}
+body, html {
+  background-color: var(--bg-color);
+  margin: 0;
+  padding: 0; 
+}
+*{
+  outline: none;
+  line-height: 1.2;
+  font-size: 2vh;
+  color: #222;
+  font-family: 'Open Sans', sans-serif;
+  margin: 0;
+  border: none;
+}
+*::selection { color:#222; background: white; }
+
+/* Bar at top of the page */
+#top{
+ -webkit-app-region: drag;
+  z-index: 100;
+  background-color: #888;
+  height: 3vh;
+  width:100vw;
+  position: fixed;
+  top:0;
+}
+#top img {
+  position: fixed;
+  width: 3vh;
+  height: 3vh;
+}
+#title {
+  margin-left: 3.5vh;
+  top: .5vh;
+  font-size: 2vh;
+  display: inline;
+  position: relative;
+  text-align: center;
+  width: 10%;
+  color: #eee;
+}
+.windowManipulator{
+  -webkit-transition: all .25s ease-out;
+  -webkit-app-region: no-drag;
+  padding:0;
+  background-color: #888;
+  float: right;
+  position: relative;
+  height: 100%;
+  width: 2.5vw;
+  color: #222;
+  text-align: center;
+  font-size: 2vh;
+}
+.windowManipulator:hover{
+  background-color: #ddd; 
+}
+
+/* Main section of the app */
+#nodeContainer {
+  padding-left: 8vh; 
+  padding-top: 10vh;
+}
+.box {
+  cursor: pointer;
+  background-color: #efefef;
+  border-radius: 10px;
+  width: 15vw;
+  height: 15vW;
+  float: left;
+  margin-right: 1vh;
+  margin-top: 1vh;
+  padding: 2vh;
+}
+
+.box h1 {
+  width: 15vw;
+  text-align: center;
+  font-size: 3vh;
+  font-weight: 800;
+}
+.box > div {
+  width: 15vw;
+  padding: 2vh;
+}
+.box:hover{
+  background-color: #ccc;
+}
+.status {
+  color: #00ff00;
+  margin-right: 3vh;
+  float: right;
+  font-size: 2vh;
+  padding:0;
+}
+#refresh {
+  position: fixed;
+  right: 2vh;
+  top: 8vh;
+  background-color: #efefef
+}
+#refresh:hover {
+  background-color: #ccc
+}
+#reconnect {
+  position: fixed;
+  right: 12vh;
+  top: 8vh;
+  background-color: #efefef
+}
+#reconnect:hover {
+  background-color: #ccc
+}
+@keyframes lds-rolling {
+  0% {
+    -webkit-transform: translate(-50%, -50%) rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    -webkit-transform: translate(-50%, -50%) rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+@-webkit-keyframes lds-rolling {
+  0% {
+    -webkit-transform: translate(-50%, -50%) rotate(0deg);
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  100% {
+    -webkit-transform: translate(-50%, -50%) rotate(360deg);
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+.lds-rolling {
+  position: relative;
+}
+.lds-rolling div,
+.lds-rolling div:after {
+  position: absolute;
+  width: 80px;
+  height: 80px;
+  border: 20px solid #45e1ff;
+  border-top-color: transparent;
+  border-radius: 50%;
+}
+.lds-rolling div {
+  -webkit-animation: lds-rolling 1s linear infinite;
+  animation: lds-rolling 1s linear infinite;
+  top: 100px;
+  left: 100px;
+}
+.lds-rolling div:after {
+  -webkit-transform: rotate(90deg);
+  transform: rotate(90deg);
+}
+.lds-rolling {
+  width: 200px !important;
+  height: 200px !important;
+  -webkit-transform: translate(-100px, -100px) scale(1) translate(100px, 100px);
+  transform: translate(-100px, -100px) scale(1) translate(100px, 100px);
+}
+#loading{
+  visibility: hidden;
+  position: fixed;
+  left:40vw;
+  top:40vh;
+}
