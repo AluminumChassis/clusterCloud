@@ -1,26 +1,20 @@
 const { dialog } = require('electron').remote
 const electron = require('electron').remote
-
 const fs = require('fs');
 const net = require('net');
 const path = require('path')
 const crypto = require('crypto');
-
-const { spawn } = require('child_process');
-
 const algorithm = 'aes-128-cbc';
 const serverURL = "http://11ebf3fb.ngrok.io"
 var password = "This is my password"
 var iv, salt
 let w = electron.getCurrentWindow()
-
-connected = false
-socket = new net.Socket(writable=true)
-
+var connected = false
+var socket = new net.Socket(writable=true)
+var max = '□'
+var min = '◱'
 socket.on('data', function(data) {
   response = JSON.parse(data)
-  data = ""
-  console.log(response)
   if (!response["node2"]) {
     document.getElementById("node2").innerHTML = ""
   } else {
@@ -28,7 +22,6 @@ socket.on('data', function(data) {
   }
   unload()
 });
-
 function connectTCP(host, port){
   socket.connect(port, host, function(){connected=true;update()})
 }
@@ -42,16 +35,14 @@ function tcpSend(message, ret){
   socket.write(message)
 }
 function update() {
-  console.log(connected)
   if(connected) {
     load()
-    encipher("Hello")
+    encipher(update)
   }
 }
 function reconnect() {
   load()
   socket.destroy()
-  console.log("here")
   connectTCP('localhost',8080)
 }
 function encipher(message){
@@ -72,7 +63,7 @@ function encipher(message){
     });
 }
 function decipher(message) {
-  iv = new Uint8Array(Buffer.from(message.split(":")[0],"hex"));
+  iv = new Uint8Array(Buffer.from(message.split(":")[0], "hex"));
   salt = new Uint8Array(Buffer.from(message.split(":")[2], 'hex'));
   key = crypto.pbkdf2Sync((password), (salt), 100, 16, 'sha256');
   console.log(key)
@@ -85,24 +76,24 @@ function decipher(message) {
 var resize = document.getElementById("resize");
 function resizeWindow() {
   current = resize.innerText;
-  resize.innerText=='□'?w.maximize():w.unmaximize();
-  resize.innerText=resize.innerText=='□'?'◱':'□';
+  resize.innerText==max?w.maximize():w.unmaximize();
+  resize.innerText=resize.innerText==max?min:max;
   scroll()
 }
 w.on('enter-full-screen', () => {
-  resize.innerText='◱'
+  resize.innerText=min
   scroll()
 });
 w.on('maximize', () => {
-  resize.innerText='◱'
+  resize.innerText=min
   scroll()
 });
 w.on('leave-full-screen', () => {
-  resize.innerText='□'
+  resize.innerText=max
   scroll()
 });
 w.on('unmaximize', () => {
-  resize.innerText='□'
+  resize.innerText=max
   scroll()
 });
 function startUp(){
