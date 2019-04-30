@@ -37,7 +37,7 @@ function tcpSend(message, ret){
 function update() {
   if(connected) {
     load()
-    encipher(update)
+    encipher("update")
   }
 }
 function reconnect() {
