@@ -45,16 +45,27 @@ func handleConnection(conn net.Conn){
 	        }
 	    	continue
 	    }
-	    buf = append(buf, tmp[:n]...)
-	    mapD := map[string]bool{"node1": true, "node2": false, "node3": true} // Test values for status of nodes
-    	mapB, _ := json.Marshal(mapD)
-	    conn.Write([]byte(string(mapB))) // Send data back
+	    
+		buf = append(buf, tmp[:n]...)
 	    result := string(buf)
-	    handle(result) // Temporary handling of input
+	    handle(result, conn) // Handling of input from client
 	}
 }
-func handle(result string){
-	fmt.Println(decrypt(result))
+func handle(result string, conn net.Conn){
+	result = decrypt(result)
+	if(strings.HasPrefix(result, "update")){
+	    
+	    activity := map[string]bool{"node1": true, "node2": false, "node3": true} // Test values for status of nodes
+    	activityJSON, _ := json.Marshal(activity)
+	    conn.Write([]byte(string(activityJSON))) // Send data back
+
+	} else if (strings.HasPrefix(result, "update")) {
+
+		activity := map[string]bool{"node1": true, "node2": false, "node3": true} // Test values for status of nodes
+    	activityJSON, _ := json.Marshal(activity)
+	    conn.Write([]byte(string(activityJSON))) // Send data back
+	
+	}
 }
 func encrypt(message string)(string){
 	dk = pbkdf2.Key([]byte(password), []byte(salt), iter, ivlen, sha256.New) // Create key
