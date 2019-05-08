@@ -58,13 +58,11 @@ func handleConnection(conn net.Conn, port string){
 	    n, err := conn.Read(tmp)
 	    if err != nil {
 	        if err != io.EOF {
-
 				activity[portMap[port]] = true
 	            break
 	        }
 	    	continue
 	    }
-	    
 		buf = append(buf, tmp[:n]...)
 	    result := string(buf)
 	    handle(result, conn, port) // Handling of input from client
