@@ -13,13 +13,20 @@ var connected = false
 var socket = new net.Socket(writable=true)
 var max = '□'
 var min = '◱'
+var a
 socket.on('data', function(data) {
   response = JSON.parse(data)
-  if (!response["node2"]) {
-    document.getElementById("node2").innerHTML = ""
-  } else {
-    document.getElementById("node2").innerHTML = 'Server Status: <div class="status" id="node2-status">●●●</div>Online'
+  console.log(a=response)
+  for (var i = 1; i > 0; i++) {
+    if(!response.hasOwnProperty(i)){
+      break
+    } else if (!response[i]) {
+      document.getElementById("node"+i).innerHTML = ""
+    } else {
+      document.getElementById("node"+i).innerHTML = 'Server Status: <div class="status" id="node'+i+'-status"> ●●●</div>Online'
+    }
   }
+  
   unload()
 });
 function connectTCP(host, port){
@@ -37,15 +44,28 @@ function tcpSend(message, ret){
 function update() {
   if(connected) {
     load()
-    encipher("update")
+    encrypt("update")
   }
+}
+var out
+async function sendFile(node) {
+  fileNames = dialog.showOpenDialog({title:"file"})
+  console.log(await fs.readFile(fileNames[0], function(err,ret) {
+    if(err) {
+      alert(err);
+      return;
+    }
+    out = ret;
+    f = "file" + node + fileNames[0]+","+String(out)
+     encrypt(f)
+  }))
 }
 function reconnect() {
   load()
   socket.destroy()
   connectTCP('localhost',8080)
 }
-function encipher(message){
+function encrypt(message){
   crypto.randomBytes(8, (err, buf) => {
         if (err) throw err;
         salt = buf
@@ -62,7 +82,7 @@ function encipher(message){
         });
     });
 }
-function decipher(message) {
+function decrypt(message) {
   iv = new Uint8Array(Buffer.from(message.split(":")[0], "hex"));
   salt = new Uint8Array(Buffer.from(message.split(":")[2], 'hex'));
   key = crypto.pbkdf2Sync((password), (salt), 100, 16, 'sha256');

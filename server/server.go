@@ -13,34 +13,53 @@ import (
 	"encoding/hex"
 	"strings"
 	"os"
+	"time"
+    "strconv"
 )
 const (
 	password = "This is my password"
-	bufferSize = 4096 // Large enough for information passing through
+	bufferSize = 65536 // Large enough for information passing through
 	iter = 100 // Iterations for key creation
 	ivlen = 16 // Length of the IV
 )
 var dk []byte
 var salt string
 var err error
+var activity map[int]bool
+var portMap map[string]int
 func main() {
+	activity = map[int]bool{1: false, 2: false, 3: false}
+	portMap = map[string]int{":8081": 1}
 	fmt.Println("Starting")
-	listener, err := net.Listen("tcp", ":8080") // Listen to connect to client
+
+	go clock()
+	go listenTCP(":8080")
+	listenTCP(":8081")
+}
+func clock() {
+	for{
+		time.Sleep(1)
+		//activity = map[int]bool{1: false, 2: false, 3: false}
+	}
+}
+func listenTCP(port string) {
+	listener, err := net.Listen("tcp", port) // Listen to connect to client
 	check(err)
 	for {
 		conn, err := listener.Accept() // Accept a connection
 		check(err)
-		go handleConnection(conn) // Handle connection
+		go handleConnection(conn, port) // Handle connection
 	}
 }
-func handleConnection(conn net.Conn){
+func handleConnection(conn net.Conn, port string){
 	for {
-		tmp := make([]byte, 256)
+		tmp := make([]byte, bufferSize)
 		buf := make([]byte, 0, bufferSize) // Create large enough buffer fro response
 	    n, err := conn.Read(tmp)
 	    if err != nil {
 	        if err != io.EOF {
-	            fmt.Println("read error:", err)
+
+				activity[portMap[port]] = true
 	            break
 	        }
 	    	continue
@@ -48,22 +67,27 @@ func handleConnection(conn net.Conn){
 	    
 		buf = append(buf, tmp[:n]...)
 	    result := string(buf)
-	    handle(result, conn) // Handling of input from client
+	    handle(result, conn, port) // Handling of input from client
 	}
 }
-func handle(result string, conn net.Conn){
+func handle(result string, conn net.Conn, port string){
 	result = decrypt(result)
+	fmt.Println(result)
 	if(strings.HasPrefix(result, "update")){
-	    
-	    activity := map[string]bool{"node1": true, "node2": false, "node3": true} // Test values for status of nodes
     	activityJSON, _ := json.Marshal(activity)
 	    conn.Write([]byte(string(activityJSON))) // Send data back
 
-	} else if (strings.HasPrefix(result, "update")) {
-
-		activity := map[string]bool{"node1": true, "node2": false, "node3": true} // Test values for status of nodes
+	} else if (strings.HasPrefix(result, "file")) {
+		fmt.Println(result[4:5])
     	activityJSON, _ := json.Marshal(activity)
 	    conn.Write([]byte(string(activityJSON))) // Send data back
+	
+	} else if (strings.HasPrefix(result, "active")) {
+		num,err := strconv.Atoi((result[6:7]))
+		check(err)
+		activity[num] = true
+		portMap[port] = num
+	    conn.Write([]byte("done.")) // Send data back
 	
 	}
 }
