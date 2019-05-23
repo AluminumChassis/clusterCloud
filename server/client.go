@@ -15,7 +15,7 @@ import (
   "time"
 )
 const (
-  password = "This is my password"
+  password = "password"
   bufferSize = 65536 // Large enough for information passing through
   iter = 100 // Iterations for key creation
   ivlen = 16 // Length of the IV

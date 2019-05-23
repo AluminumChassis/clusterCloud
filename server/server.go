@@ -18,7 +18,7 @@ import (
   	"encoding/base64"
 )
 const (
-	password = "This is my password"
+	password = "password"
 	bufferSize = 65536 // Large enough for information passing through
 	iter = 100 // Iterations for key creation
 	ivlen = 16 // Length of the IV
@@ -77,8 +77,8 @@ func handle(result string, conn net.Conn, port string){
 	fmt.Println(r)
 	if(strings.HasPrefix(r, "update")){
     	activityJSON, _ := json.Marshal(activity)
-	    conn.Write([]byte(encrypt(string(activityJSON)))) // Send data back
-
+    	encrypted := encrypt(string(activityJSON))
+	    conn.Write([]byte(encrypted)) // Send data back
 	} else if (strings.HasPrefix(r, "file")) {
 		num,err := strconv.Atoi((r[4:5]))
 		check(err)
@@ -111,7 +111,7 @@ func encrypt(message string)(string){
   mode := cipher.NewCBCEncrypter(block, iv) // CBC mode of encryption
   mode.CryptBlocks(ciphertext, []byte(message)) // Encrypt message
 
-  final := hex.EncodeToString(iv)+":"+hex.EncodeToString(ciphertext)+":"+hex.EncodeToString([]byte(salt)) // Group IV, message, and salt together
+  final := hex.EncodeToString(iv)+":"+hex.EncodeToString(ciphertext)+":"+hex.EncodeToString(salt) // Group IV, message, and salt together
   fmt.Println(final)
   return final
 }
@@ -173,9 +173,9 @@ func find(a []string, x string) int {
     }
     return len(a)
 }
-func GenerateRandomString(s int) (string, error) {
+func GenerateRandomString(s int) ([]byte, error) {
     b, err := GenerateRandomBytes(s)
-    return base64.URLEncoding.EncodeToString(b), err
+    return []byte(base64.URLEncoding.EncodeToString(b)), err
 }
 func GenerateRandomBytes(n int) ([]byte, error) {
     b := make([]byte, n)

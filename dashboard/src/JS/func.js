@@ -5,8 +5,9 @@ const net = require('net');
 const path = require('path')
 const crypto = require('crypto');
 const algorithm = 'aes-128-cbc';
-const serverURL = "http://11ebf3fb.ngrok.io"
-var password = "This is my password"
+const serverURL = "0.tcp.ngrok.io"
+const serverPort = "16801"
+var password = "password"
 var iv, salt
 let w = electron.getCurrentWindow()
 var connected = false
@@ -19,7 +20,7 @@ socket.on('data', function(data) {
   data = decrypt(data)
   i = data.indexOf("#")
   if(i>0) {
-    data = data.subtring(0,i)
+    data = data.substring(0,i)
   }
   response = JSON.parse(data)
   console.log(a=response)
@@ -69,7 +70,7 @@ async function sendFile(node) {
 function reconnect() {
   load()
   socket.destroy()
-  connectTCP('localhost',8080)
+  connectTCP(serverURL,serverPort)
 }
 function encrypt(message){
   crypto.randomBytes(8, (err, buf) => {
@@ -90,14 +91,15 @@ function encrypt(message){
 }
 function decrypt(message) {
   console.log(message)
-  iv = new Uint8Array(Buffer.from(message.split(":")[0], "hex"));
-  salt = new Uint8Array(Buffer.from(message.split(":")[2], 'hex'));
+  let [i, encrypted, s] = splitMessage(message)
+  iv = new Uint8Array(Buffer.from(i, "hex"));
+  salt = new Uint8Array(Buffer.from(s, 'hex'));
   key = crypto.pbkdf2Sync((password), (salt), 100, 16, 'sha256');
   console.log(key)
-  d = crypto.createDecipheriv(algorithm, key, iv);
-  encrypted = message.split(":")[1]
-  let decrypted = d.update(encrypted);
-  decrypted += d.final('utf8');
+  decipher = crypto.createDecipheriv(algorithm, key, iv);
+  decipher.setAutoPadding(false);
+  let decrypted = decipher.update(encrypted, 'hex', 'utf8');
+  decrypted += decipher.final('utf8');
   return decrypted
 }
 var resize = document.getElementById("resize");
@@ -125,5 +127,8 @@ w.on('unmaximize', () => {
 });
 function startUp(){
   w.maximize();
+}
+function splitMessage(m){
+  return m.split(":")
 }
 //setInterval(update, 5000)
