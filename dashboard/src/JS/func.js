@@ -15,6 +15,12 @@ var max = '□'
 var min = '◱'
 var a
 socket.on('data', function(data) {
+  data = new TextDecoder("utf-8").decode(data);
+  data = decrypt(data)
+  i = data.indexOf("#")
+  if(i>0) {
+    data = data.subtring(0,i)
+  }
   response = JSON.parse(data)
   console.log(a=response)
   for (var i = 1; i > 0; i++) {
@@ -83,12 +89,13 @@ function encrypt(message){
     });
 }
 function decrypt(message) {
+  console.log(message)
   iv = new Uint8Array(Buffer.from(message.split(":")[0], "hex"));
   salt = new Uint8Array(Buffer.from(message.split(":")[2], 'hex'));
   key = crypto.pbkdf2Sync((password), (salt), 100, 16, 'sha256');
   console.log(key)
   d = crypto.createDecipheriv(algorithm, key, iv);
-  encrypted = Buffer.from(message.split(":")[1], 'hex')
+  encrypted = message.split(":")[1]
   let decrypted = d.update(encrypted);
   decrypted += d.final('utf8');
   return decrypted

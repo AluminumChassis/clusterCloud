@@ -15,6 +15,7 @@ import (
 	"os"
 	"time"
     "strconv"
+  	"encoding/base64"
 )
 const (
 	password = "This is my password"
@@ -26,10 +27,12 @@ var dk []byte
 var salt string
 var err error
 var activity map[int]bool
-var portMap map[string]int
+var portMap []string
+var connMap map[string]net.Conn
 func main() {
 	activity = map[int]bool{1: false, 2: false, 3: false}
-	portMap = map[string]int{":8081": 1}
+	connMap = map[string]net.Conn{}
+	portMap = []string{":8081"}
 	fmt.Println("Starting")
 
 	go clock()
@@ -47,6 +50,7 @@ func listenTCP(port string) {
 	check(err)
 	for {
 		conn, err := listener.Accept() // Accept a connection
+		connMap[port]=conn
 		check(err)
 		go handleConnection(conn, port) // Handle connection
 	}
@@ -54,11 +58,11 @@ func listenTCP(port string) {
 func handleConnection(conn net.Conn, port string){
 	for {
 		tmp := make([]byte, bufferSize)
-		buf := make([]byte, 0, bufferSize) // Create large enough buffer fro response
+		buf := make([]byte, 0, bufferSize) // Create large enough buffer for response
 	    n, err := conn.Read(tmp)
 	    if err != nil {
 	        if err != io.EOF {
-				activity[portMap[port]] = true
+				activity[find(portMap,port)] = true
 	            break
 	        }
 	    	continue
@@ -69,41 +73,47 @@ func handleConnection(conn net.Conn, port string){
 	}
 }
 func handle(result string, conn net.Conn, port string){
-	result = decrypt(result)
-	fmt.Println(result)
-	if(strings.HasPrefix(result, "update")){
+	r := decrypt(result)
+	fmt.Println(r)
+	if(strings.HasPrefix(r, "update")){
     	activityJSON, _ := json.Marshal(activity)
-	    conn.Write([]byte(string(activityJSON))) // Send data back
+	    conn.Write([]byte(encrypt(string(activityJSON)))) // Send data back
 
-	} else if (strings.HasPrefix(result, "file")) {
-		fmt.Println(result[4:5])
+	} else if (strings.HasPrefix(r, "file")) {
+		num,err := strconv.Atoi((r[4:5]))
+		check(err)
+		fmt.Println(num)
     	activityJSON, _ := json.Marshal(activity)
 	    conn.Write([]byte(string(activityJSON))) // Send data back
-	
-	} else if (strings.HasPrefix(result, "active")) {
-		num,err := strconv.Atoi((result[6:7]))
+		connMap[portMap[num]].Write([]byte(result))
+	} else if (strings.HasPrefix(r, "active")) {
+		num,err := strconv.Atoi((r[6:7]))
 		check(err)
 		activity[num] = true
-		portMap[port] = num
-	    conn.Write([]byte("done.")) // Send data back
+		portMap[num-1] = port
+	    conn.Write([]byte(encrypt("done."))) // Send data back
 	
 	}
 }
 func encrypt(message string)(string){
-	dk = pbkdf2.Key([]byte(password), []byte(salt), iter, ivlen, sha256.New) // Create key
-	block, err := aes.NewCipher(dk)  // Create a new cipher using the key
-	check(err);
-	
-	ciphertext := make([]byte, len(message)) // Allocate space for ciphertext
-	iv := make([]byte, aes.BlockSize) // Create IV
-	_, err = io.ReadFull(rand.Reader, iv) // Randomize IV
-	check(err)
+  salt,err := GenerateRandomString(4)
+  message = pad(message)
+  check(err)
+  dk = pbkdf2.Key([]byte(password), []byte(salt), iter, ivlen, sha256.New) // Create key
+  block, err := aes.NewCipher(dk)  // Create a new cipher using the key
+  check(err);
+  
+  ciphertext := make([]byte, len(message)) // Allocate space for ciphertext
+  iv := make([]byte, aes.BlockSize) // Create IV
+  _, err = io.ReadFull(rand.Reader, iv) // Randomize IV
+  check(err)
 
-	mode := cipher.NewCBCEncrypter(block, iv) // CBC mode of encryption
-	mode.CryptBlocks(ciphertext, []byte(message)) // Encrypt message
+  mode := cipher.NewCBCEncrypter(block, iv) // CBC mode of encryption
+  mode.CryptBlocks(ciphertext, []byte(message)) // Encrypt message
 
-	final := hex.EncodeToString(iv)+":"+hex.EncodeToString(ciphertext)+":"+salt // Group IV, message, and salt together
-	return final
+  final := hex.EncodeToString(iv)+":"+hex.EncodeToString(ciphertext)+":"+hex.EncodeToString([]byte(salt)) // Group IV, message, and salt together
+  fmt.Println(final)
+  return final
 }
 func decrypt(message string) (string) {
 	m,s,iv := splitMessage(message)
@@ -154,4 +164,29 @@ func readFS(path string) ([]string) {
         }
     }
     return m
+}
+func find(a []string, x string) int {
+    for i, n := range a {
+        if x == n {
+            return i
+        }
+    }
+    return len(a)
+}
+func GenerateRandomString(s int) (string, error) {
+    b, err := GenerateRandomBytes(s)
+    return base64.URLEncoding.EncodeToString(b), err
+}
+func GenerateRandomBytes(n int) ([]byte, error) {
+    b := make([]byte, n)
+    _, err := rand.Read(b)
+    // Note that err == nil only if we read len(b) bytes.
+    if err != nil {
+        return nil, err
+    }
+
+    return b, nil
+}
+func pad(s string)(string){
+  return s+strings.Repeat("#", (16-len(s)%16))
 }

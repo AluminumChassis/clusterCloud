@@ -32,7 +32,7 @@ func main() {
     m := encrypt("active1")
     conn.Write([]byte(m))
     tmp := make([]byte, bufferSize)
-    buf := make([]byte, 0, bufferSize) // Create large enough buffer fro response
+    buf := make([]byte, 0, bufferSize) // Create large enough buffer for response
       n, err := conn.Read(tmp)
       if err != nil {
           if err != io.EOF {
@@ -44,7 +44,15 @@ func main() {
       
     buf = append(buf, tmp[:n]...)
     result := string(buf)
-    fmt.Println(result)
+    handle(result, conn) // Handling of input from client
+  }
+}
+func handle(result string, conn net.Conn){
+  fmt.Println(result)
+  result = decrypt(result)
+  fmt.Println(result)
+  if (strings.HasPrefix(result, "file")) {
+    return
   }
 }
 func encrypt(message string)(string){
